@@ -2,6 +2,12 @@
 
 Kotoba Insert is an English-language Obsidian plugin for quickly inserting Japanese vocabulary from an offline JMdict-derived dictionary.
 
+## Features
+
+- Search a local Japanese dictionary and insert selected meanings with a Markdown template.
+- Insert verified per-kanji or word-group furigana when the dictionary provides an alignment.
+- Read Kotoba Insert furigana directly in Reading view and Live Preview. In the editor, furigana renders above the kanji until you place the cursor on that token, when the editable `{word|reading}` source is shown.
+
 ## V1 workflow
 
 1. Install the dictionary from **Settings → Kotoba Insert**.
