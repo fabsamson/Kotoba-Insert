@@ -28,6 +28,10 @@ Multi-sense values are semicolon-separated. An absent optional field becomes an 
 
 Lookups are local after installation. The plugin sends neither note content nor search terms to a server. See [PRIVACY.md](PRIVACY.md) and [NOTICE.md](NOTICE.md).
 
+## Support
+
+If Kotoba Insert is useful to you, you can support its development through [Buy Me a Coffee](https://buymeacoffee.com/gibbonolive9442).
+
 ## Development
 
 ```bash
