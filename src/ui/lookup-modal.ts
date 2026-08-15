@@ -1,4 +1,4 @@
-import { Component, MarkdownRenderer, Modal, Notice, type App, type Editor, type TFile } from "obsidian";
+import { Component, MarkdownRenderer, Modal, Notice, TFile, type App, type Editor } from "obsidian";
 
 import type { DictionaryService } from "../dictionary/service";
 import type { SearchResult } from "../dictionary/types";
@@ -180,14 +180,14 @@ export class LookupModal extends Modal {
 		}
 
 		const file = this.app.vault.getAbstractFileByPath(path);
-		if (!file || !("extension" in file)) {
+		if (!(file instanceof TFile)) {
 			preview.createEl("p", { text: "The selected template is no longer available.", cls: "kotoba-muted" });
 			return;
 		}
 
 		preview.createEl("p", { text: "Updating preview…", cls: "kotoba-muted" });
 		try {
-			const template = await this.app.vault.read(file as TFile);
+			const template = await this.app.vault.read(file);
 			if (version !== this.previewVersion || preview !== this.previewEl) return;
 			const rendered = renderTemplate(template, { form: result.matchedForm, allForms: result.entry.forms, senses });
 			preview.empty();
@@ -236,11 +236,11 @@ export class LookupModal extends Modal {
 		const path = this.selectedTemplatePath;
 		if (!result || !path || this.selectedSenses.size === 0) return;
 		const file = this.app.vault.getAbstractFileByPath(path);
-		if (!file || !("extension" in file)) {
+		if (!(file instanceof TFile)) {
 			new Notice("The selected template is no longer available.");
 			return;
 		}
-		const template = await this.app.vault.read(file as TFile);
+		const template = await this.app.vault.read(file);
 		const senses = this.selectedSensesFor(result);
 		const rendered = renderTemplate(template, { form: result.matchedForm, allForms: result.entry.forms, senses });
 		this.editor.replaceRange(rendered, this.editor.getCursor());

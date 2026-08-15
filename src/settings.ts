@@ -1,4 +1,4 @@
-import { App, Notice, PluginSettingTab, Setting, type TFile } from "obsidian";
+import { App, normalizePath, Notice, PluginSettingTab, Setting, TFile, TFolder } from "obsidian";
 
 import { renderFuriganaInElement } from "./furigana";
 import type KotobaInsertPlugin from "./main";
@@ -53,7 +53,7 @@ export class KotobaSettingTab extends PluginSettingTab {
 	public display(): void {
 		const { containerEl } = this;
 		containerEl.empty();
-		containerEl.createEl("h2", { text: "Kotoba Insert" });
+		new Setting(containerEl).setName("Kotoba Insert").setHeading();
 		this.renderTabs(containerEl);
 		if (this.activePage === "guide") {
 			this.renderGuide(containerEl);
@@ -82,7 +82,7 @@ export class KotobaSettingTab extends PluginSettingTab {
 				}
 			}));
 
-		containerEl.createEl("h3", { text: "Offline dictionary" });
+		new Setting(containerEl).setName("Offline dictionary").setHeading();
 		new Setting(containerEl)
 			.setName("Dictionary metadata URL")
 			.setDesc("Only change this for a compatible Kotoba Insert data release.")
@@ -112,7 +112,7 @@ export class KotobaSettingTab extends PluginSettingTab {
 				}
 			}));
 
-		containerEl.createEl("h3", { text: "Sources and privacy" });
+		new Setting(containerEl).setName("Sources and privacy").setHeading();
 		containerEl.createEl("p", {
 			text: "Lookups run locally after installation. Kotoba Insert does not send notes or search terms over the network. Dictionary snapshots are derived from JMdict and released under CC BY-SA 4.0.",
 		});
@@ -195,18 +195,28 @@ export class KotobaSettingTab extends PluginSettingTab {
 }
 
 export function getTemplateFiles(app: App, folder: string): TFile[] {
-	const normalized = folder.replace(/^\/+|\/+$/g, "");
-	const prefix = normalized ? `${normalized}/` : "";
-	return app.vault.getMarkdownFiles().filter((file) => file.path.startsWith(prefix));
+	const normalized = normalizePath(folder.trim());
+	const root = app.vault.getAbstractFileByPath(normalized);
+	if (root instanceof TFile) return root.extension === "md" ? [root] : [];
+	if (!(root instanceof TFolder)) return [];
+	return collectMarkdownFiles(root);
 }
 
 export async function createDefaultTemplate(app: App, folder: string): Promise<TFile | null> {
-	const normalized = folder.replace(/^\/+|\/+$/g, "") || DEFAULT_SETTINGS.templateFolder;
-	const folderPath = normalized;
-	if (!app.vault.getAbstractFileByPath(folderPath)) await app.vault.createFolder(folderPath);
+	const folderPath = normalizePath(folder.trim()) || DEFAULT_SETTINGS.templateFolder;
+	const existing = app.vault.getAbstractFileByPath(folderPath);
+	if (!existing) await app.vault.createFolder(folderPath);
+	else if (!(existing instanceof TFolder)) throw new Error(`${folderPath} exists and is not a folder.`);
 	const path = `${folderPath}/Default.md`;
 	if (app.vault.getAbstractFileByPath(path)) return null;
 	return app.vault.create(path, `${DEFAULT_TEMPLATE}\n`);
+}
+
+function collectMarkdownFiles(folder: TFolder): TFile[] {
+	return folder.children.flatMap((child) => {
+		if (child instanceof TFile) return child.extension === "md" ? [child] : [];
+		return child instanceof TFolder ? collectMarkdownFiles(child) : [];
+	});
 }
 
 function message(error: unknown): string {
