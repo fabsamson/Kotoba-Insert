@@ -2,6 +2,7 @@ import { Notice, Plugin, type Editor } from "obsidian";
 
 import { DictionaryService } from "./dictionary/service";
 import { renderFuriganaInElement } from "./furigana";
+import { furiganaLivePreview } from "./live-preview";
 import { DEFAULT_SETTINGS, KotobaSettingTab, type KotobaSettings } from "./settings";
 import { LookupModal } from "./ui/lookup-modal";
 
@@ -25,6 +26,7 @@ export default class KotobaInsertPlugin extends Plugin {
 		}
 
 		this.addSettingTab(new KotobaSettingTab(this));
+		this.registerEditorExtension(furiganaLivePreview);
 		this.addCommand({
 			id: "search-and-insert",
 			name: "Search and insert Japanese vocabulary",

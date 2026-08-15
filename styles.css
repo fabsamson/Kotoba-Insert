@@ -44,6 +44,10 @@
 	white-space: nowrap;
 }
 
+.kotoba-insert-live-preview-furigana {
+	cursor: text;
+}
+
 .kotoba-insert-furigana rt {
 	font-size: 0.6em;
 	user-select: none;

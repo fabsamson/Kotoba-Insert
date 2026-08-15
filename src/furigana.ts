@@ -3,16 +3,30 @@ export interface FuriganaToken {
 	reading: string;
 }
 
-const FURIGANA_PATTERN = /\{([^{}|\n]+)\|([^{}|\n]+)\}/g;
+export interface FuriganaMatch extends FuriganaToken {
+	from: number;
+	to: number;
+}
+
+const FURIGANA_PATTERN_SOURCE = "\\{([^{}|\\n]+)\\|([^{}|\\n]+)\\}";
+
+export function findFuriganaTokens(text: string, offset = 0): FuriganaMatch[] {
+	const matches: FuriganaMatch[] = [];
+	const matcher = new RegExp(FURIGANA_PATTERN_SOURCE, "g");
+	for (let match = matcher.exec(text); match; match = matcher.exec(text)) {
+		const from = offset + match.index;
+		matches.push({ word: match[1], reading: match[2], from, to: from + match[0].length });
+	}
+	return matches;
+}
 
 export function splitFuriganaText(text: string): Array<string | FuriganaToken> {
 	const parts: Array<string | FuriganaToken> = [];
 	let cursor = 0;
-	for (const match of text.matchAll(FURIGANA_PATTERN)) {
-		const index = match.index ?? 0;
-		if (index > cursor) parts.push(text.slice(cursor, index));
-		parts.push({ word: match[1], reading: match[2] });
-		cursor = index + match[0].length;
+	for (const match of findFuriganaTokens(text)) {
+		if (match.from > cursor) parts.push(text.slice(cursor, match.from));
+		parts.push({ word: match.word, reading: match.reading });
+		cursor = match.to;
 	}
 	if (cursor < text.length) parts.push(text.slice(cursor));
 	return parts.length > 0 ? parts : [text];
@@ -23,8 +37,7 @@ export function renderFuriganaInElement(root: HTMLElement): void {
 	const textNodes: Text[] = [];
 	for (let current = walker.nextNode(); current; current = walker.nextNode()) {
 		if (current.parentElement?.closest("code, pre, .frontmatter")) continue;
-		if (FURIGANA_PATTERN.test(current.textContent ?? "")) textNodes.push(current as Text);
-		FURIGANA_PATTERN.lastIndex = 0;
+		if (findFuriganaTokens(current.textContent ?? "").length > 0) textNodes.push(current as Text);
 	}
 
 	for (const node of textNodes) {
