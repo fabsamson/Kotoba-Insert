@@ -32,7 +32,7 @@ describe("formContainsQuery", () => {
 		const results = [
 			result("other", { written: "\u98df\u3079\u7269", reading: "\u305f\u3079\u3082\u306e", priority: [] }),
 			result("frequency", { written: "\u98df\u3079\u65b9", reading: "\u305f\u3079\u304b\u305f", priority: [], newsFrequencyBand: 3 }),
-			result("common", { written: "\u98df\u3079\u904e\u304e", reading: "\u305f\u3079\u3059\u304e", priority: [], commonness: ["specified as common by JMdict editors"], newsFrequencyBand: 24 }),
+			result("common", { written: "\u98df\u3079\u904e\u304e", reading: "\u305f\u3079\u3059\u304e", priority: [], commonness: ["spec", "news24k"], newsFrequencyBand: 24 }),
 			result("exact", { written: "\u98df\u3079\u308b", reading: "\u305f\u3079\u308b", priority: [] }),
 		];
 

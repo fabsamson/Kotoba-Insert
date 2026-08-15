@@ -22,10 +22,10 @@ describe("renderTemplate", () => {
 
 	it("renders commonness labels from the selected form", () => {
 		const rendered = renderTemplate("{{commonness}}", {
-			form: { written: "\u306d\u305f", reading: "\u306d\u305f", priority: [], commonness: ["specified as common by JMdict editors"] },
+			form: { written: "\u304a\u4f7f\u3044", reading: "\u304a\u3064\u304b\u3044", priority: [], commonness: ["spec", "news18k"] },
 			allForms: [],
 			senses: [],
 		});
-		expect(rendered).toBe("specified as common by JMdict editors");
+		expect(rendered).toBe("spec; news18k");
 	});
 });

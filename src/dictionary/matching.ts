@@ -24,7 +24,7 @@ function exactMatchRank(form: DictionaryForm, query: string): number {
 }
 
 function commonnessRank(entry: DictionaryEntry): number {
-	return entry.forms.some((form) => (form.commonness?.length ?? 0) > 0) ? 0 : 1;
+	return entry.forms.some((form) => form.commonness?.some((tag) => tag === "spec" || tag === "gai")) ? 0 : 1;
 }
 
 function newsFrequencyRank(entry: DictionaryEntry): number {
