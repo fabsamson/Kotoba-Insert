@@ -50,24 +50,35 @@ export class LookupModal extends Modal {
 		button.addEventListener("click", () => void this.search());
 
 		const resultsEl = contentEl.createDiv({ cls: "kotoba-results" });
-		if (this.results.length === 0 && this.query.trim()) resultsEl.createEl("p", { text: "No exact matches found.", cls: "kotoba-muted" });
-		for (const result of this.results) this.renderResult(resultsEl, result);
+		if (this.results.length === 0 && this.query.trim()) resultsEl.createEl("p", { text: "No matches found.", cls: "kotoba-muted" });
+		if (this.results.length > 0) this.renderResultsTable(resultsEl);
 		if (this.selectedResult) this.renderSelection(contentEl);
 		window.setTimeout(() => input.focus(), 0);
 	}
 
+	private renderResultsTable(container: HTMLElement): void {
+		const table = container.createEl("table", { cls: "kotoba-results-table" });
+		const header = table.createEl("thead").createEl("tr");
+		header.createEl("th", { text: "Word" });
+		header.createEl("th", { text: "Reading" });
+		header.createEl("th", { text: "Definitions" });
+		const body = table.createEl("tbody");
+		for (const result of this.results) this.renderResult(body, result);
+	}
+
 	private renderResult(container: HTMLElement, result: SearchResult): void {
-		const card = container.createDiv({ cls: "kotoba-result" });
-		if (result === this.selectedResult) card.addClass("is-selected");
-		const label = `${result.matchedForm.written} (${result.matchedForm.reading})`;
-		const choice = card.createEl("button", { text: label, cls: "kotoba-result-button" });
+		const row = container.createEl("tr", { cls: "kotoba-result" });
+		if (result === this.selectedResult) row.addClass("is-selected");
+		const word = row.createEl("td");
+		const choice = word.createEl("button", { text: result.matchedForm.written, cls: "kotoba-result-button" });
 		choice.addEventListener("click", () => {
 			this.selectedResult = result;
 			this.selectedSenses = new Set(result.entry.senses.length > 0 ? [0] : []);
 			this.render();
 		});
+		row.createEl("td", { text: result.matchedForm.reading });
 		const firstDefinition = result.entry.senses[0]?.definitions.join("; ");
-		if (firstDefinition) card.createEl("div", { text: firstDefinition, cls: "kotoba-muted" });
+		row.createEl("td", { text: firstDefinition || "No English definition", cls: "kotoba-muted" });
 	}
 
 	private renderSelection(container: HTMLElement): void {

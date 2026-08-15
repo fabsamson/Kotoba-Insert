@@ -1,10 +1,7 @@
 .kotoba-insert-modal .kotoba-results {
 	margin-top: 1rem;
-	display: grid;
-	gap: 0.75rem;
 }
 
-.kotoba-insert-modal .kotoba-result,
 .kotoba-insert-modal .kotoba-sense {
 	border: 1px solid var(--background-modifier-border);
 	border-radius: var(--radius-s);
@@ -13,13 +10,48 @@
 }
 
 .kotoba-insert-modal .kotoba-result.is-selected {
-	border-color: var(--interactive-accent);
+	background: var(--background-modifier-hover);
 }
 
 .kotoba-insert-modal .kotoba-result-button {
-	width: 100%;
-	text-align: left;
+	padding: 0;
+	border: 0;
+	border-radius: 0;
+	background: transparent;
+	box-shadow: none;
+	color: var(--text-normal);
 	font-weight: var(--font-semibold);
+}
+
+.kotoba-insert-modal .kotoba-results-table {
+	width: 100%;
+	table-layout: fixed;
+	border-collapse: collapse;
+}
+
+.kotoba-insert-modal .kotoba-results-table th,
+.kotoba-insert-modal .kotoba-results-table td {
+	padding: 0.4rem 0.5rem;
+	border-bottom: 1px solid var(--background-modifier-border);
+	text-align: left;
+	vertical-align: top;
+	word-break: break-word;
+}
+
+.kotoba-insert-modal .kotoba-results-table th {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	font-weight: var(--font-semibold);
+}
+
+.kotoba-insert-modal .kotoba-results-table th:nth-child(1),
+.kotoba-insert-modal .kotoba-results-table td:nth-child(1) {
+	width: 24%;
+}
+
+.kotoba-insert-modal .kotoba-results-table th:nth-child(2),
+.kotoba-insert-modal .kotoba-results-table td:nth-child(2) {
+	width: 24%;
 }
 
 .kotoba-insert-modal .kotoba-sense label {
