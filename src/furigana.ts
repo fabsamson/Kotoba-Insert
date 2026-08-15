@@ -33,7 +33,7 @@ export function splitFuriganaText(text: string): Array<string | FuriganaToken> {
 }
 
 export function renderFuriganaInElement(root: HTMLElement): void {
-	const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+	const walker = root.doc.createTreeWalker(root, NodeFilter.SHOW_TEXT);
 	const textNodes: Text[] = [];
 	for (let current = walker.nextNode(); current; current = walker.nextNode()) {
 		if (current.parentElement?.closest("code, pre, .frontmatter")) continue;
@@ -41,16 +41,12 @@ export function renderFuriganaInElement(root: HTMLElement): void {
 	}
 
 	for (const node of textNodes) {
-		const fragment = document.createDocumentFragment();
+		const fragment = createFragment();
 		for (const part of splitFuriganaText(node.textContent ?? "")) {
 			if (typeof part === "string") fragment.appendText(part);
 			else {
-				const ruby = document.createElement("ruby");
-				ruby.className = "kotoba-insert-furigana";
-				ruby.textContent = part.word;
-				const rt = document.createElement("rt");
-				rt.textContent = part.reading;
-				ruby.append(rt);
+				const ruby = createEl("ruby", { cls: "kotoba-insert-furigana", text: part.word });
+				ruby.createEl("rt", { text: part.reading });
 				fragment.append(ruby);
 			}
 		}

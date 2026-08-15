@@ -38,6 +38,29 @@ export default class KotobaInsertPlugin extends Plugin {
 	}
 
 	private async loadSettings(): Promise<void> {
-		this.settings = { ...DEFAULT_SETTINGS, ...await this.loadData() };
+		const savedSettings: unknown = await this.loadData();
+		this.settings = normalizeSettings(savedSettings);
 	}
+}
+
+function normalizeSettings(value: unknown): KotobaSettings {
+	if (!isRecord(value)) return { ...DEFAULT_SETTINGS };
+	return {
+		templateFolder: nonEmptyString(value.templateFolder, DEFAULT_SETTINGS.templateFolder),
+		dictionaryMetadataUrl: nonEmptyString(value.dictionaryMetadataUrl, DEFAULT_SETTINGS.dictionaryMetadataUrl),
+		installedDictionaryVersion: stringOrNull(value.installedDictionaryVersion),
+		installedDictionaryBuiltAt: stringOrNull(value.installedDictionaryBuiltAt),
+	};
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function nonEmptyString(value: unknown, fallback: string): string {
+	return typeof value === "string" && value.trim() ? value.trim() : fallback;
+}
+
+function stringOrNull(value: unknown): string | null {
+	return typeof value === "string" ? value : null;
 }

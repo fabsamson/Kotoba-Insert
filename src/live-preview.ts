@@ -17,12 +17,8 @@ class FuriganaWidget extends WidgetType {
 	}
 
 	public toDOM(_view: EditorView): HTMLElement {
-		const ruby = document.createElement("ruby");
-		ruby.className = "kotoba-insert-furigana kotoba-insert-live-preview-furigana";
-		ruby.textContent = this.word;
-		const rt = document.createElement("rt");
-		rt.textContent = this.reading;
-		ruby.append(rt);
+		const ruby = createEl("ruby", { cls: "kotoba-insert-furigana kotoba-insert-live-preview-furigana", text: this.word });
+		ruby.createEl("rt", { text: this.reading });
 		return ruby;
 	}
 
