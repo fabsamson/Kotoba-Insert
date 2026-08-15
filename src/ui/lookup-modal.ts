@@ -133,7 +133,7 @@ export class LookupModal extends Modal {
 			});
 			label.createSpan({ text: sense.definitions.join("; ") || "No English definition" });
 			const tags = [...sense.partOfSpeech, ...sense.fieldTags, ...sense.usageTags];
-			if (tags.length > 0) card.createEl("div", { text: tags.join("; "), cls: "kotoba-muted" });
+			if (tags.length > 0) card.createDiv({ text: tags.join("; "), cls: "kotoba-muted" });
 		});
 
 		selection.createEl("h3", { text: "Template" });
