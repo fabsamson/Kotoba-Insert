@@ -20,7 +20,7 @@ export function createFields(selection: TemplateSelection): Record<string, strin
 	return {
 		word: selection.form.written,
 		reading: selection.form.reading,
-		word_with_furigana: `{${selection.form.written}|${selection.form.reading}}`,
+		word_with_furigana: formatWordWithFurigana(selection.form),
 		english_definitions: join(definitions),
 		english_definition_1: definitions[0] ?? "",
 		part_of_speech: join(selection.senses.flatMap((sense) => sense.partOfSpeech)),
@@ -35,6 +35,19 @@ export function createFields(selection: TemplateSelection): Record<string, strin
 		usage_tags: join(selection.senses.flatMap((sense) => sense.usageTags)),
 		sense_notes: join(selection.senses.flatMap((sense) => sense.senseNotes)),
 	};
+}
+
+function formatWordWithFurigana(form: DictionaryForm): string {
+	const segments = form.furigana;
+	if (!segments || segments.length === 0 || !isVerifiedAlignment(segments, form)) {
+		return `{${form.written}|${form.reading}}`;
+	}
+	return segments.map((segment) => segment.rt ? `{${segment.ruby}|${segment.rt}}` : segment.ruby).join("");
+}
+
+function isVerifiedAlignment(segments: NonNullable<DictionaryForm["furigana"]>, form: DictionaryForm): boolean {
+	return segments.map((segment) => segment.ruby).join("") === form.written
+		&& segments.map((segment) => segment.rt ?? segment.ruby).join("") === form.reading;
 }
 
 function join(values: string[]): string {

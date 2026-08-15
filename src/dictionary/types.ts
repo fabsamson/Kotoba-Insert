@@ -2,12 +2,18 @@ import { gunzipSync } from "fflate";
 
 export const SNAPSHOT_SCHEMA_VERSION = 1;
 
+export interface FuriganaSegment {
+	ruby: string;
+	rt?: string;
+}
+
 export interface DictionaryForm {
 	written: string;
 	reading: string;
 	priority: string[];
 	commonness?: string[];
 	newsFrequencyBand?: number;
+	furigana?: FuriganaSegment[];
 }
 
 export interface DictionarySense {
@@ -36,8 +42,9 @@ export interface SnapshotMetadata {
 	snapshotVersion: string;
 	builtAt: string;
 	upstream: { url: string; sha256: string };
+	furiganaUpstream?: { url: string; sha256: string };
 	asset: { fileName: string; sha256: string; bytes: number };
-	licences: { data: string; upstream: string };
+	licences: { data: string; upstream: string; furiganaUpstream?: string };
 }
 
 export interface SearchResult {

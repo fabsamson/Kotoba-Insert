@@ -7,3 +7,4 @@ Those snapshots are derived from JMdict data provided by the Electronic Dictiona
 - JMdict project: https://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project
 - EDRDG licence: https://www.edrdg.org/edrdg/licence.html
 - Data project: https://github.com/fabsamson/kotoba-insert-data
+- Furigana alignment source: https://github.com/Doublevil/JmdictFurigana

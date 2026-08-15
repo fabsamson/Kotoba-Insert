@@ -29,7 +29,7 @@ interface TemplateFieldGuide {
 const TEMPLATE_FIELD_GUIDE: TemplateFieldGuide[] = [
 	{ placeholder: "{{word}}", description: "Selected written form.", example: "\u4e0b\u304c\u308a" },
 	{ placeholder: "{{reading}}", description: "Selected reading.", example: "\u3055\u304c\u308a" },
-	{ placeholder: "{{word_with_furigana}}", description: "Kotoba Insert furigana syntax.", example: "{\u4e0b\u304c\u308a|\u3055\u304c\u308a}" },
+	{ placeholder: "{{word_with_furigana}}", description: "Verified per-segment furigana when available; otherwise Kotoba Insert whole-word syntax.", example: "{\u4e0b|\u3055}\u304c\u308a" },
 	{ placeholder: "{{english_definitions}}", description: "Definitions from every selected sense.", example: "fall; decline; lowering; hanging down; drooping; slanting (downward); string apron; food offering to the gods; leftovers; hand-me-downs; leaving (one's master's place for home); a little after ...; sagari; \u4e0b\u304c\u308a\uff08\u2605\uff09; \u30b5\u30ac\u30ea" },
 	{ placeholder: "{{english_definition_1}}", description: "First English definition from the selected senses.", example: "fall" },
 	{ placeholder: "{{part_of_speech}}", description: "Part-of-speech labels from the selected senses.", example: "noun (common) (futsuumeishi); noun, used as a suffix" },
@@ -151,7 +151,7 @@ export class KotobaSettingTab extends PluginSettingTab {
 		container.createEl("h4", { text: "Example template" });
 		this.createCodeBlock(container, "## {{word_with_furigana}}\n\n**Definitions:** {{english_definitions}}\n\n**Part of speech:** {{part_of_speech}}\n\n**Usage:** {{usage_tags}}\n\n**Notes:** {{sense_notes}}");
 		container.createEl("p", {
-			text: "For example, selecting all senses of \u4e0b\u304c\u308a produces a Markdown note with the stored furigana syntax {\u4e0b\u304c\u308a|\u3055\u304c\u308a}. Kotoba Insert renders this syntax itself, so no separate Furigana plugin is required.",
+			text: "For example, selecting all senses of \u4e0b\u304c\u308a can produce {\u4e0b|\u3055}\u304c\u308a when a verified alignment exists. If it does not, Kotoba Insert safely uses {\u4e0b\u304c\u308a|\u3055\u304c\u308a}. Kotoba Insert renders both forms itself, so no separate Furigana plugin is required.",
 		});
 
 		container.createEl("h4", { text: "Available keywords" });
@@ -179,10 +179,12 @@ export class KotobaSettingTab extends PluginSettingTab {
 
 		container.createEl("h3", { text: "Dictionary data source" });
 		container.createEl("p", {
-			text: "Kotoba Insert uses an offline snapshot created from the regular English dictionary release of the JMdict for Yomitan project. The snapshot is downloaded only when you choose Install / update dictionary; after that, lookups run locally on your device.",
+			text: "Kotoba Insert uses an offline snapshot created from the regular English dictionary release of the JMdict for Yomitan project. Verified furigana alignment comes from JmdictFurigana and is used only when the written form and reading both match. The snapshot is downloaded only when you choose Install / update dictionary; after that, lookups run locally on your device.",
 		});
 		const links = container.createEl("p");
 		links.createEl("a", { text: "JMdict for Yomitan", href: "https://github.com/yomidevs/jmdict-yomitan" });
+		links.appendText(" \u00b7 ");
+		links.createEl("a", { text: "JmdictFurigana", href: "https://github.com/Doublevil/JmdictFurigana" });
 		links.appendText(" \u00b7 ");
 		links.createEl("a", { text: "Kotoba Insert data releases and attribution", href: "https://github.com/fabsamson/kotoba-insert-data" });
 	}

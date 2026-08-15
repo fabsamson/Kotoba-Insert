@@ -28,4 +28,32 @@ describe("renderTemplate", () => {
 		});
 		expect(rendered).toBe("spec; news18k");
 	});
+
+	it("uses verified per-segment furigana alignment when present", () => {
+		const rendered = renderTemplate("{{word_with_furigana}}", {
+			form: {
+				written: "食べる",
+				reading: "たべる",
+				priority: [],
+				furigana: [{ ruby: "食", rt: "た" }, { ruby: "べる" }],
+			},
+			allForms: [],
+			senses: [],
+		});
+		expect(rendered).toBe("{食|た}べる");
+	});
+
+	it("falls back to whole-word furigana when alignment does not match the selected reading", () => {
+		const rendered = renderTemplate("{{word_with_furigana}}", {
+			form: {
+				written: "食べる",
+				reading: "たべる",
+				priority: [],
+				furigana: [{ ruby: "食", rt: "しょく" }, { ruby: "べる" }],
+			},
+			allForms: [],
+			senses: [],
+		});
+		expect(rendered).toBe("{食べる|たべる}");
+	});
 });

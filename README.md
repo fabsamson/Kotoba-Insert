@@ -16,7 +16,7 @@ The default template is:
 {{word_with_furigana}} — {{english_definitions}}
 ```
 
-Kotoba Insert renders `{word|reading}` itself, so no separate Furigana plugin is required.
+Kotoba Insert renders `{word|reading}` itself, so no separate Furigana plugin is required. When the installed dictionary contains an exact JmdictFurigana match for the selected written form and reading, `{{word_with_furigana}}` uses aligned segments instead: `{食|た}べる`. It otherwise safely falls back to `{食べる|たべる}`.
 
 ## Template fields
 
