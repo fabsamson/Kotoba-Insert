@@ -37,7 +37,7 @@ export class LookupModal extends Modal {
 		const { contentEl } = this;
 		contentEl.empty();
 		contentEl.createEl("h2", { text: "Kotoba Insert" });
-		contentEl.createEl("p", { text: "Search an exact Japanese word or reading." });
+		contentEl.createEl("p", { text: "Search any part of a Japanese word or reading." });
 
 		const searchRow = contentEl.createDiv({ cls: "kotoba-search-row" });
 		const input = searchRow.createEl("input", { type: "text", placeholder: "e.g. 食べる" });
