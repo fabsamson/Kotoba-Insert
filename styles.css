@@ -1,0 +1,50 @@
+.kotoba-insert-modal .kotoba-results {
+	margin-top: 1rem;
+	display: grid;
+	gap: 0.75rem;
+}
+
+.kotoba-insert-modal .kotoba-result,
+.kotoba-insert-modal .kotoba-sense {
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	padding: 0.75rem;
+	background: var(--background-secondary);
+}
+
+.kotoba-insert-modal .kotoba-result.is-selected {
+	border-color: var(--interactive-accent);
+}
+
+.kotoba-insert-modal .kotoba-result-button {
+	width: 100%;
+	text-align: left;
+	font-weight: var(--font-semibold);
+}
+
+.kotoba-insert-modal .kotoba-sense label {
+	display: flex;
+	gap: 0.5rem;
+	align-items: flex-start;
+}
+
+.kotoba-insert-modal .kotoba-actions {
+	display: flex;
+	gap: 0.5rem;
+	justify-content: flex-end;
+	margin-top: 1rem;
+}
+
+.kotoba-insert-modal .kotoba-muted {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
+.kotoba-insert-furigana {
+	white-space: nowrap;
+}
+
+.kotoba-insert-furigana rt {
+	font-size: 0.6em;
+	user-select: none;
+}
