@@ -20,7 +20,7 @@ Kotoba Insert renders `{word|reading}` itself, so no separate Furigana plugin is
 
 ## Template fields
 
-`word`, `reading`, `word_with_furigana`, `english_definitions`, `english_definition_1`, `part_of_speech`, `alternate_forms`, `priority`, `cross_references`, `antonyms`, `field_tags`, `usage_tags`, and `sense_notes`.
+`word`, `reading`, `word_with_furigana`, `english_definitions`, `english_definition_1`, `part_of_speech`, `alternate_forms`, `priority`, `commonness`, `cross_references`, `antonyms`, `field_tags`, `usage_tags`, and `sense_notes`.
 
 Multi-sense values are semicolon-separated. An absent optional field becomes an empty string.
 
