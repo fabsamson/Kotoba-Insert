@@ -1,4 +1,4 @@
-import { Notice, Plugin, type Editor } from "obsidian";
+import { Plugin, type Editor } from "obsidian";
 
 import { DictionaryService } from "./dictionary/service";
 import { renderFuriganaInElement } from "./furigana";
@@ -17,13 +17,6 @@ export default class KotobaInsertPlugin extends Plugin {
 			this.settings.installedDictionaryBuiltAt = metadata.builtAt;
 			await this.saveSettings();
 		});
-
-		try {
-			await this.dictionary.loadInstalled();
-		} catch (error) {
-			console.warn("Kotoba Insert could not load the installed dictionary", error);
-			new Notice("Kotoba Insert could not load the installed dictionary. Reinstall it from plugin settings.");
-		}
 
 		this.addSettingTab(new KotobaSettingTab(this));
 		this.registerEditorExtension(furiganaLivePreview);
