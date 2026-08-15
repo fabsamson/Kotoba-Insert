@@ -48,3 +48,47 @@
 	font-size: 0.6em;
 	user-select: none;
 }
+
+.kotoba-insert-settings-tabs {
+	display: flex;
+	gap: 0.25rem;
+	margin: 0.5rem 0 1.25rem;
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.kotoba-insert-settings-tab {
+	padding: 0.45rem 0.75rem;
+	border: 0;
+	border-bottom: 2px solid transparent;
+	border-radius: 0;
+	background: transparent;
+	color: var(--text-muted);
+	box-shadow: none;
+}
+
+.kotoba-insert-settings-tab:hover {
+	background: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+.kotoba-insert-settings-tab.is-active {
+	border-bottom-color: var(--interactive-accent);
+	color: var(--text-normal);
+}
+
+.kotoba-insert-template-guide {
+	display: table;
+	width: 100%;
+	margin: 0.75rem 0 1.5rem;
+}
+
+.kotoba-insert-template-guide th,
+.kotoba-insert-template-guide td {
+	vertical-align: top;
+	padding: 0.5rem;
+}
+
+.kotoba-insert-template-guide td:last-child {
+	max-width: 28rem;
+	word-break: break-word;
+}

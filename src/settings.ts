@@ -1,5 +1,6 @@
 import { App, Notice, PluginSettingTab, Setting, type TFile } from "obsidian";
 
+import { renderFuriganaInElement } from "./furigana";
 import type KotobaInsertPlugin from "./main";
 import { DEFAULT_TEMPLATE } from "./template";
 
@@ -17,7 +18,33 @@ export const DEFAULT_SETTINGS: KotobaSettings = {
 	installedDictionaryBuiltAt: null,
 };
 
+type SettingsPage = "settings" | "guide";
+
+interface TemplateFieldGuide {
+	placeholder: string;
+	description: string;
+	example: string;
+}
+
+const TEMPLATE_FIELD_GUIDE: TemplateFieldGuide[] = [
+	{ placeholder: "{{word}}", description: "Selected written form.", example: "\u4e0b\u304c\u308a" },
+	{ placeholder: "{{reading}}", description: "Selected reading.", example: "\u3055\u304c\u308a" },
+	{ placeholder: "{{word_with_furigana}}", description: "Kotoba Insert furigana syntax.", example: "{\u4e0b\u304c\u308a|\u3055\u304c\u308a}" },
+	{ placeholder: "{{english_definitions}}", description: "Definitions from every selected sense.", example: "fall; decline; lowering; hanging down; drooping; slanting (downward); string apron; food offering to the gods; leftovers; hand-me-downs; leaving (one's master's place for home); a little after ...; sagari; \u4e0b\u304c\u308a\uff08\u2605\uff09; \u30b5\u30ac\u30ea" },
+	{ placeholder: "{{english_definition_1}}", description: "First English definition from the selected senses.", example: "fall" },
+	{ placeholder: "{{part_of_speech}}", description: "Part-of-speech labels from the selected senses.", example: "noun (common) (futsuumeishi); noun, used as a suffix" },
+	{ placeholder: "{{alternate_forms}}", description: "Other written or reading forms in the entry.", example: "\u30b5\u30ac\u30ea" },
+	{ placeholder: "{{priority}}", description: "Frequency or commonness labels for the selected form.", example: "included in Ichimango Goi Bunruishuu (\uff11\u4e07\u8a9e\u8a9e\u5f59\u5206\u985e\u96c6); ranked between the top 12,000 and 13,000 words in a frequency analysis of the Mainichi Shimbun (1990s)" },
+	{ placeholder: "{{cross_references}}", description: "Related entries referenced by the selected senses.", example: "\u304a\u4e0b\u304c\u308asee: \u304a\u4e0b\u304c\u308a" },
+	{ placeholder: "{{antonyms}}", description: "Antonyms from the selected senses.", example: "\u4e0a\u304c\u308a" },
+	{ placeholder: "{{field_tags}}", description: "Subject-field labels from the selected senses.", example: "sumo" },
+	{ placeholder: "{{usage_tags}}", description: "Usage labels from the selected senses.", example: "go (game); word usually written using kana alone; other surface forms and readings" },
+	{ placeholder: "{{sense_notes}}", description: "Notes attached to the selected senses.", example: "ornamental cords hanging from the front of a sumo wrestler's belt; usu. as \u304a\u4e0b\u304c\u308a; usu. \u30b5\u30ac\u30ea; to extend a group of stones towards the edge of the board" },
+];
+
 export class KotobaSettingTab extends PluginSettingTab {
+	private activePage: SettingsPage = "settings";
+
 	public constructor(private readonly plugin: KotobaInsertPlugin) {
 		super(plugin.app, plugin);
 	}
@@ -26,6 +53,11 @@ export class KotobaSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 		containerEl.empty();
 		containerEl.createEl("h2", { text: "Kotoba Insert" });
+		this.renderTabs(containerEl);
+		if (this.activePage === "guide") {
+			this.renderGuide(containerEl);
+			return;
+		}
 
 		new Setting(containerEl)
 			.setName("Template folder")
@@ -87,6 +119,75 @@ export class KotobaSettingTab extends PluginSettingTab {
 		links.createEl("a", { text: "JMdict / EDRDG", href: "https://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project" });
 		links.appendText(" · ");
 		links.createEl("a", { text: "Kotoba Insert data", href: "https://github.com/fabsamson/kotoba-insert-data" });
+	}
+
+	private renderTabs(container: HTMLElement): void {
+		const tabList = container.createDiv({ cls: "kotoba-insert-settings-tabs" });
+		tabList.setAttr("role", "tablist");
+		tabList.setAttr("aria-label", "Kotoba Insert settings pages");
+		for (const [page, label] of [["settings", "Settings"], ["guide", "Guide"]] as const) {
+			const tab = tabList.createEl("button", { text: label, cls: "kotoba-insert-settings-tab" });
+			tab.setAttr("type", "button");
+			tab.setAttr("role", "tab");
+			tab.setAttr("aria-selected", String(this.activePage === page));
+			if (this.activePage === page) tab.addClass("is-active");
+			tab.addEventListener("click", () => {
+				this.activePage = page;
+				this.display();
+			});
+		}
+	}
+
+	private renderGuide(container: HTMLElement): void {
+		container.createEl("h3", { text: "Markdown templates" });
+		container.createEl("p", {
+			text: "A template is a Markdown file in the configured template folder. Kotoba Insert replaces each exact {{keyword}} with data from the selected entry and inserts the resulting Markdown at the cursor.",
+		});
+		container.createEl("p", {
+			text: "Use double braces, lowercase field names, and no spaces inside the braces. Values from multiple selected senses are de-duplicated and separated with semicolons. A field with no available data becomes empty.",
+		});
+
+		container.createEl("h4", { text: "Example template" });
+		this.createCodeBlock(container, "## {{word_with_furigana}}\n\n**Definitions:** {{english_definitions}}\n\n**Part of speech:** {{part_of_speech}}\n\n**Usage:** {{usage_tags}}\n\n**Notes:** {{sense_notes}}");
+		container.createEl("p", {
+			text: "For example, selecting all senses of \u4e0b\u304c\u308a produces a Markdown note with the stored furigana syntax {\u4e0b\u304c\u308a|\u3055\u304c\u308a}. Kotoba Insert renders this syntax itself, so no separate Furigana plugin is required.",
+		});
+
+		container.createEl("h4", { text: "Available keywords" });
+		container.createEl("p", {
+			text: "The examples below use \u4e0b\u304c\u308a (\u3055\u304c\u308a) with all of its senses selected. This entry has data for every currently supported field.",
+		});
+		const table = container.createEl("table", { cls: "kotoba-insert-template-guide" });
+		const header = table.createEl("thead").createEl("tr");
+		header.createEl("th", { text: "Keyword" });
+		header.createEl("th", { text: "Provides" });
+		header.createEl("th", { text: "Example value" });
+		const body = table.createEl("tbody");
+		for (const field of TEMPLATE_FIELD_GUIDE) {
+			const row = body.createEl("tr");
+			row.createEl("td").createEl("code", { text: field.placeholder });
+			row.createEl("td", { text: field.description });
+			const example = row.createEl("td");
+			if (field.placeholder === "{{word_with_furigana}}") {
+				example.createSpan({ text: field.example });
+				renderFuriganaInElement(example);
+			} else {
+				example.createEl("code", { text: field.example });
+			}
+		}
+
+		container.createEl("h3", { text: "Dictionary data source" });
+		container.createEl("p", {
+			text: "Kotoba Insert uses an offline snapshot created from the regular English dictionary release of the JMdict for Yomitan project. The snapshot is downloaded only when you choose Install / update dictionary; after that, lookups run locally on your device.",
+		});
+		const links = container.createEl("p");
+		links.createEl("a", { text: "JMdict for Yomitan", href: "https://github.com/yomidevs/jmdict-yomitan" });
+		links.appendText(" \u00b7 ");
+		links.createEl("a", { text: "Kotoba Insert data releases and attribution", href: "https://github.com/fabsamson/kotoba-insert-data" });
+	}
+
+	private createCodeBlock(container: HTMLElement, value: string): void {
+		container.createEl("pre").createEl("code", { text: value });
 	}
 }
 
