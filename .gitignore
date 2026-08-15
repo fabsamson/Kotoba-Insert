@@ -2,5 +2,6 @@ node_modules/
 main.js
 main.js.map
 data.json
+kotoba-dictionary.json.gz
 coverage/
 .DS_Store
