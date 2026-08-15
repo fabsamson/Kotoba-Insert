@@ -6,6 +6,8 @@ export interface DictionaryForm {
 	written: string;
 	reading: string;
 	priority: string[];
+	commonness?: string[];
+	newsFrequencyBand?: number;
 }
 
 export interface DictionarySense {

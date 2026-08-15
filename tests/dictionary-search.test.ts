@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { formContainsQuery, selectMatchedForm } from "../src/dictionary/matching";
+import { formContainsQuery, rankSearchResults, selectMatchedForm } from "../src/dictionary/matching";
+import type { DictionaryForm } from "../src/dictionary/types";
 
 const form = { written: "\u98df\u3079\u308b", reading: "\u305f\u3079\u308b", priority: [] };
 
@@ -26,4 +27,26 @@ describe("formContainsQuery", () => {
 		const alternate = { written: "\u98df\u3079\u3059\u304e", reading: "\u305f\u3079\u3059\u304e", priority: [] };
 		expect(selectMatchedForm([form, alternate], "\u98df\u3079\u3059\u304e")).toBe(alternate);
 	});
+
+	it("ranks exact matches, common entries, frequency bands, then other partial matches", () => {
+		const results = [
+			result("other", { written: "\u98df\u3079\u7269", reading: "\u305f\u3079\u3082\u306e", priority: [] }),
+			result("frequency", { written: "\u98df\u3079\u65b9", reading: "\u305f\u3079\u304b\u305f", priority: [], newsFrequencyBand: 3 }),
+			result("common", { written: "\u98df\u3079\u904e\u304e", reading: "\u305f\u3079\u3059\u304e", priority: [], commonness: ["specified as common by JMdict editors"], newsFrequencyBand: 24 }),
+			result("exact", { written: "\u98df\u3079\u308b", reading: "\u305f\u3079\u308b", priority: [] }),
+		];
+
+		expect(rankSearchResults(results, "\u98df\u3079\u308b").map((searchResult) => searchResult.entry.id)).toEqual(["exact", "common", "frequency", "other"]);
+	});
 });
+
+function result(id: string, matchedForm: DictionaryForm) {
+	return {
+		entry: {
+			id,
+			forms: [matchedForm],
+			senses: [],
+		},
+		matchedForm,
+	};
+}

@@ -1,6 +1,6 @@
 import { requestUrl, type App, type DataAdapter, type PluginManifest } from "obsidian";
 
-import { selectMatchedForm } from "./matching";
+import { rankSearchResults, selectMatchedForm } from "./matching";
 import { parseSnapshot, SNAPSHOT_SCHEMA_VERSION, type DictionarySnapshot, type SearchResult, type SnapshotMetadata, isMetadata } from "./types";
 
 export const DEFAULT_METADATA_URL = "https://github.com/fabsamson/kotoba-insert-data/releases/latest/download/kotoba-dictionary.metadata.json";
@@ -50,10 +50,11 @@ export class DictionaryService {
 		if (!normalized) return [];
 		const snapshot = await this.loadInstalled();
 		if (!snapshot) throw new Error("Install the dictionary before searching.");
-		return snapshot.entries.flatMap((entry) => {
+		const results = snapshot.entries.flatMap((entry) => {
 			const matchedForm = selectMatchedForm(entry.forms, normalized);
 			return matchedForm ? [{ entry, matchedForm }] : [];
 		});
+		return rankSearchResults(results, normalized);
 	}
 
 	private snapshotPath(): string {

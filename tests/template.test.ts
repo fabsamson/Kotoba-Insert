@@ -19,4 +19,13 @@ describe("renderTemplate", () => {
 		});
 		expect(rendered).toBe("{欠落|けつらく} — lack; absence; omission / noun");
 	});
+
+	it("renders commonness labels from the selected form", () => {
+		const rendered = renderTemplate("{{commonness}}", {
+			form: { written: "\u306d\u305f", reading: "\u306d\u305f", priority: [], commonness: ["specified as common by JMdict editors"] },
+			allForms: [],
+			senses: [],
+		});
+		expect(rendered).toBe("specified as common by JMdict editors");
+	});
 });

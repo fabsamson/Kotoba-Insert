@@ -28,6 +28,7 @@ export function createFields(selection: TemplateSelection): Record<string, strin
 			.filter((form) => form.written !== selection.form.written)
 			.map((form) => form.reading === form.written ? form.written : `${form.written} (${form.reading})`)),
 		priority: join(selection.form.priority),
+		commonness: join(selection.form.commonness ?? []),
 		cross_references: join(selection.senses.flatMap((sense) => sense.crossReferences)),
 		antonyms: join(selection.senses.flatMap((sense) => sense.antonyms)),
 		field_tags: join(selection.senses.flatMap((sense) => sense.fieldTags)),

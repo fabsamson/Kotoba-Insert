@@ -35,6 +35,7 @@ const TEMPLATE_FIELD_GUIDE: TemplateFieldGuide[] = [
 	{ placeholder: "{{part_of_speech}}", description: "Part-of-speech labels from the selected senses.", example: "noun (common) (futsuumeishi); noun, used as a suffix" },
 	{ placeholder: "{{alternate_forms}}", description: "Other written or reading forms in the entry.", example: "\u30b5\u30ac\u30ea" },
 	{ placeholder: "{{priority}}", description: "Frequency or commonness labels for the selected form.", example: "included in Ichimango Goi Bunruishuu (\uff11\u4e07\u8a9e\u8a9e\u5f59\u5206\u985e\u96c6); ranked between the top 12,000 and 13,000 words in a frequency analysis of the Mainichi Shimbun (1990s)" },
+	{ placeholder: "{{commonness}}", description: "Commonness labels (spec or gai) for the selected form.", example: "specified as common by JMdict editors (\u306d\u305f example)" },
 	{ placeholder: "{{cross_references}}", description: "Related entries referenced by the selected senses.", example: "\u304a\u4e0b\u304c\u308asee: \u304a\u4e0b\u304c\u308a" },
 	{ placeholder: "{{antonyms}}", description: "Antonyms from the selected senses.", example: "\u4e0a\u304c\u308a" },
 	{ placeholder: "{{field_tags}}", description: "Subject-field labels from the selected senses.", example: "sumo" },
@@ -155,7 +156,7 @@ export class KotobaSettingTab extends PluginSettingTab {
 
 		container.createEl("h4", { text: "Available keywords" });
 		container.createEl("p", {
-			text: "The examples below use \u4e0b\u304c\u308a (\u3055\u304c\u308a) with all of its senses selected. This entry has data for every currently supported field.",
+			text: "The examples below use \u4e0b\u304c\u308a (\u3055\u304c\u308a) with all of its senses selected. The commonness example uses \u306d\u305f because \u4e0b\u304c\u308a has no spec or gai tag in JMdict.",
 		});
 		const table = container.createEl("table", { cls: "kotoba-insert-template-guide" });
 		const header = table.createEl("thead").createEl("tr");
