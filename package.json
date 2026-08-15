@@ -1,6 +1,6 @@
 {
   "name": "kotoba-insert",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "An offline Japanese vocabulary insertion plugin for Obsidian.",
   "main": "main.js",
   "type": "module",
@@ -11,7 +11,12 @@
     "check": "tsc --noEmit --skipLibCheck",
     "version": "node version-bump.mjs && git add manifest.json versions.json"
   },
-  "keywords": ["obsidian", "japanese", "dictionary", "furigana"],
+  "keywords": [
+    "obsidian",
+    "japanese",
+    "dictionary",
+    "furigana"
+  ],
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^24.0.0",
