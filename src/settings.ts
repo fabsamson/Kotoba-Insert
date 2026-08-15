@@ -1,4 +1,4 @@
-import { App, normalizePath, Notice, PluginSettingTab, Setting, TFile, TFolder } from "obsidian";
+import { AbstractInputSuggest, App, normalizePath, Notice, PluginSettingTab, Setting, TFile, TFolder } from "obsidian";
 
 import { renderFuriganaInElement } from "./furigana";
 import type KotobaInsertPlugin from "./main";
@@ -12,7 +12,7 @@ export interface KotobaSettings {
 }
 
 export const DEFAULT_SETTINGS: KotobaSettings = {
-	templateFolder: "Kotoba Insert Templates",
+	templateFolder: "kotoba-insert-templates",
 	dictionaryMetadataUrl: "https://github.com/fabsamson/kotoba-insert-data/releases/latest/download/kotoba-dictionary.metadata.json",
 	installedDictionaryVersion: null,
 	installedDictionaryBuiltAt: null,
@@ -62,13 +62,18 @@ export class KotobaSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Template folder")
-			.setDesc("Markdown templates in this vault. Templates use {{field}} placeholders.")
-			.addText((text) => text
-				.setValue(this.plugin.settings.templateFolder)
-				.onChange(async (value) => {
-					this.plugin.settings.templateFolder = value.trim() || DEFAULT_SETTINGS.templateFolder;
+			.setDesc("Markdown templates in this vault. Type to choose an existing folder, or enter a new path. Templates use {{field}} placeholders.")
+			.addText((text) => {
+				text.setValue(this.plugin.settings.templateFolder)
+					.onChange(async (value) => {
+						this.plugin.settings.templateFolder = value.trim() || DEFAULT_SETTINGS.templateFolder;
+						await this.plugin.saveSettings();
+					});
+				new VaultFolderSuggest(this.app, text.inputEl, async (folder) => {
+					this.plugin.settings.templateFolder = folder;
 					await this.plugin.saveSettings();
-				}));
+				});
+			});
 
 		new Setting(containerEl)
 			.setName("Create default template")
@@ -192,6 +197,40 @@ export class KotobaSettingTab extends PluginSettingTab {
 	private createCodeBlock(container: HTMLElement, value: string): void {
 		container.createEl("pre").createEl("code", { text: value });
 	}
+}
+
+class VaultFolderSuggest extends AbstractInputSuggest<TFolder> {
+	public constructor(
+		app: App,
+		inputEl: HTMLInputElement,
+		private readonly onFolderSelected: (folder: string) => Promise<void>,
+	) {
+		super(app, inputEl);
+		this.limit = 25;
+	}
+
+	protected getSuggestions(query: string): TFolder[] {
+		const normalizedQuery = normalizePath(query.trim()).toLocaleLowerCase();
+		return this.app.vault.getAllLoadedFiles()
+			.filter((file): file is TFolder => file instanceof TFolder && file.path.length > 0)
+			.filter((folder) => folder.path.toLocaleLowerCase().includes(normalizedQuery))
+			.sort((left, right) => folderMatchOrder(left.path, normalizedQuery) - folderMatchOrder(right.path, normalizedQuery)
+				|| left.path.localeCompare(right.path));
+	}
+
+	public renderSuggestion(folder: TFolder, el: HTMLElement): void {
+		el.setText(folder.path);
+	}
+
+	public selectSuggestion(folder: TFolder, _event: MouseEvent | KeyboardEvent): void {
+		this.setValue(folder.path);
+		void this.onFolderSelected(folder.path);
+	}
+}
+
+function folderMatchOrder(path: string, query: string): number {
+	if (!query || path.toLocaleLowerCase().startsWith(query)) return 0;
+	return 1;
 }
 
 export function getTemplateFiles(app: App, folder: string): TFile[] {
