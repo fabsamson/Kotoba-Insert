@@ -9,6 +9,10 @@
 	background: var(--background-secondary);
 }
 
+.kotoba-insert-modal .kotoba-sense + .kotoba-sense {
+	margin-top: 0.5rem;
+}
+
 .kotoba-insert-modal .kotoba-result.is-selected {
 	background: var(--background-modifier-hover);
 }
@@ -58,6 +62,47 @@
 	display: flex;
 	gap: 0.5rem;
 	align-items: flex-start;
+}
+
+.kotoba-insert-modal .kotoba-pagination {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 0.5rem;
+	margin-top: 0.75rem;
+}
+
+.kotoba-insert-modal .kotoba-pagination .kotoba-muted {
+	margin-right: auto;
+}
+
+.kotoba-insert-modal .kotoba-selection > h3 {
+	margin-top: 1.5rem;
+}
+
+.kotoba-insert-modal .kotoba-insertion-preview {
+	margin-top: 1rem;
+}
+
+.kotoba-insert-modal .kotoba-insertion-preview h4 {
+	margin-bottom: 0.5rem;
+}
+
+.kotoba-insert-modal .kotoba-insertion-preview-content {
+	min-height: 2.5rem;
+	padding: 0.75rem;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	background: var(--background-secondary);
+	overflow-wrap: anywhere;
+}
+
+.kotoba-insert-modal .kotoba-insertion-preview-content > :first-child {
+	margin-top: 0;
+}
+
+.kotoba-insert-modal .kotoba-insertion-preview-content > :last-child {
+	margin-bottom: 0;
 }
 
 .kotoba-insert-modal .kotoba-actions {
