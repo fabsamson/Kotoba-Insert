@@ -6,7 +6,7 @@ Kotoba Insert is an English-language Obsidian plugin for quickly inserting Japan
 
 1. Install the dictionary from **Settings → Kotoba Insert**.
 2. Add **Kotoba Insert: Search and insert Japanese vocabulary** to Obsidian's mobile toolbar, or run it from the command palette.
-3. Search an exact Japanese written form, reading, or alternate form.
+3. Search any complete or partial Japanese written form, reading, or alternate form.
 4. Select one entry, one or more senses, and a Markdown template from your configured vault folder.
 5. Insert the rendered result at the editor cursor.
 
@@ -39,4 +39,8 @@ npm install
 npm run dev
 ```
 
-For a production bundle, run `npm run build`. Community Plugin releases must attach `main.js`, `manifest.json`, and `styles.css` to a GitHub release whose tag exactly matches `manifest.json`.
+For a production bundle, run `npm run build`.
+
+## Releases
+
+The release workflow runs when you push a Git tag. Before tagging, update `manifest.json` and `versions.json`, commit the version change, and verify `npm run check`, `npm test`, and `npm run build`. The tag must exactly match `manifest.json` (for example, `0.1.0`, not `v0.1.0`). The workflow creates a GitHub release with `main.js`, `manifest.json`, and `styles.css` attached.
