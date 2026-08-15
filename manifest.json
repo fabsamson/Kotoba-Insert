@@ -1,7 +1,7 @@
 {
   "id": "kotoba-insert",
   "name": "Kotoba Insert",
-  "version": "1.0.1",
+  "version": "2.0.0",
   "minAppVersion": "1.13.0",
   "description": "Look up Japanese words locally and insert configurable vocabulary notes.",
   "author": "Fabian Samson",
