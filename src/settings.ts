@@ -307,9 +307,10 @@ export const DEFAULT_AI_PROMPT = `Act as a fast Japanese-to-English study assist
 {words_with_furigana} - {english_translation}, {easy_japanese_definition}
 
 Rules:
+- All parts in {} are necessary and must be filled
 - Answer in English.
 - Be concise: maximum 30 words for vocabulary, 60 words for grammar point.
-- words_with_furigana use this {kanji|furigana} syntax. Align kanji with furigana by repeating this syntax and splitting the words as many times necessary.
+- {words_with_furigana} use this {kanji|furigana} syntax. You need to align kanji with furigana by repeating this syntax and splitting the words as many times necessary e.g. {生|き}き{物|もの}
 - Do not invent information.
 - If ambiguous, mention the two possible meanings briefly.
 - No introduction or conclusion`;
