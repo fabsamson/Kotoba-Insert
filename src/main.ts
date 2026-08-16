@@ -47,7 +47,7 @@ export default class KotobaInsertPlugin extends Plugin {
 	}
 
 	private openLookup(editor: Editor, initialTab: "dictionary" | "ai" = "dictionary"): void {
-		new LookupModal(this.app, editor, this.dictionary, this.ai, () => this.settings.templateFolder, () => this.settings.promptFolder, initialTab).open();
+		new LookupModal(this.app, editor, this.dictionary, this.ai, () => this.settings.templateFolder, () => this.settings.promptFolder, initialTab, editor.getSelection()).open();
 	}
 
 	private async loadSettings(): Promise<void> {

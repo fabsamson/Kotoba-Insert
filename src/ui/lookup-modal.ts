@@ -3,6 +3,7 @@ import { Component, MarkdownRenderer, Modal, Notice, TFile, type App, type Edito
 import type { AiService } from "../ai/service";
 import type { DictionaryService } from "../dictionary/service";
 import type { SearchResult } from "../dictionary/types";
+import { replaceSelectionAndPlaceCursor } from "../editor-insertion";
 import { renderFuriganaInElement } from "../furigana";
 import { getPromptFiles, getTemplateFiles } from "../settings";
 import { renderTemplate } from "../template";
@@ -42,9 +43,11 @@ export class LookupModal extends Modal {
 		private readonly templateFolder: () => string,
 		private readonly promptFolder: () => string,
 		initialTab: LookupTab = "dictionary",
+		initialQuery = "",
 	) {
 		super(app);
 		this.activeTab = initialTab;
+		this.query = initialQuery;
 	}
 
 	public async onOpen(): Promise<void> {
@@ -147,7 +150,7 @@ export class LookupModal extends Modal {
 			void this.updateAiPreview();
 
 			const actions = container.createDiv({ cls: "kotoba-actions" });
-			this.aiInsertButton = actions.createEl("button", { text: "Insert at cursor", cls: "mod-cta" });
+			this.aiInsertButton = actions.createEl("button", { text: "Insert", cls: "mod-cta" });
 			this.aiInsertButton.addEventListener("click", () => this.insertAiResult());
 		}
 		this.renderAiDisclaimer(container);
@@ -438,13 +441,13 @@ export class LookupModal extends Modal {
 		const template = await this.app.vault.read(file);
 		const senses = this.selectedSensesFor(result);
 		const rendered = renderTemplate(template, { form: result.matchedForm, allForms: result.entry.forms, senses });
-		this.editor.replaceRange(rendered, this.editor.getCursor());
+		replaceSelectionAndPlaceCursor(this.editor, rendered);
 		this.close();
 	}
 
 	private insertAiResult(): void {
 		if (!this.aiResult) return;
-		this.editor.replaceRange(this.aiResult, this.editor.getCursor());
+		replaceSelectionAndPlaceCursor(this.editor, this.aiResult);
 		this.close();
 	}
 }
