@@ -1,4 +1,4 @@
-import { App, normalizePath, Notice, PluginSettingTab, Setting, type SettingDefinitionItem, TFile, TFolder } from "obsidian";
+import { App, normalizePath, Notice, PluginSettingTab, SecretComponent, Setting, type SettingDefinitionItem, TFile, TFolder } from "obsidian";
 
 import { renderFuriganaInElement } from "./furigana";
 import type KotobaInsertPlugin from "./main";
@@ -6,6 +6,10 @@ import { DEFAULT_TEMPLATE } from "./template";
 
 export interface KotobaSettings {
 	templateFolder: string;
+	promptFolder: string;
+	aiApiBaseUrl: string;
+	aiModel: string;
+	aiApiKeySecret: string;
 	dictionaryMetadataUrl: string;
 	installedDictionaryVersion: string | null;
 	installedDictionaryBuiltAt: string | null;
@@ -13,6 +17,10 @@ export interface KotobaSettings {
 
 export const DEFAULT_SETTINGS: KotobaSettings = {
 	templateFolder: "kotoba-insert-templates",
+	promptFolder: "kotoba-insert-prompt",
+	aiApiBaseUrl: "https://api.openai.com/v1",
+	aiModel: "gpt-5.6-luna",
+	aiApiKeySecret: "",
 	dictionaryMetadataUrl: "https://github.com/fabsamson/kotoba-insert-data/releases/latest/download/kotoba-dictionary.metadata.json",
 	installedDictionaryVersion: null,
 	installedDictionaryBuiltAt: null,
@@ -69,6 +77,52 @@ export class KotobaSettingTab extends PluginSettingTab {
 						name: "Create default template",
 						desc: "Creates Default.md in the configured template folder without overwriting an existing file.",
 						render: (setting) => this.addCreateTemplateButton(setting),
+					},
+				],
+			},
+			{
+				type: "group",
+				heading: "AI lookup",
+				items: [
+					{
+						name: "AI API base URL",
+						desc: "OpenAI-compatible Chat Completions base URL. HTTPS is required, except for a local server.",
+						control: {
+							type: "text",
+							key: "aiApiBaseUrl",
+							placeholder: DEFAULT_SETTINGS.aiApiBaseUrl,
+							validate: validateAiApiBaseUrl,
+						},
+					},
+					{
+						name: "AI model",
+						desc: "Model identifier supplied by your AI provider.",
+						control: {
+							type: "text",
+							key: "aiModel",
+							placeholder: DEFAULT_SETTINGS.aiModel,
+							validate: (value) => value.trim() ? undefined : "Enter an AI model identifier.",
+						},
+					},
+					{
+						name: "AI API key secret",
+						desc: "Choose or create the named secret that Kotoba Insert uses for AI requests. The API key itself is not saved in plugin settings.",
+						render: (setting) => this.addAiApiKeySecretPicker(setting),
+					},
+					{
+						name: "Prompt folder",
+						desc: "Markdown prompts in this vault. Select one for every AI lookup.",
+						control: {
+							type: "folder",
+							key: "promptFolder",
+							placeholder: DEFAULT_SETTINGS.promptFolder,
+							validate: (value) => value.trim() ? undefined : "Enter a prompt folder path.",
+						},
+					},
+					{
+						name: "Create default prompt",
+						desc: "Creates Default.md in the configured prompt folder without overwriting an existing file.",
+						render: (setting) => this.addCreatePromptButton(setting),
 					},
 				],
 			},
@@ -165,6 +219,28 @@ export class KotobaSettingTab extends PluginSettingTab {
 		setting.addButton((button) => button.setButtonText("Create template").onClick(() => void this.createDefaultTemplateFile()));
 	}
 
+	private addAiApiKeySecretPicker(setting: Setting): void {
+		setting.addComponent((container) => new SecretComponent(this.app, container)
+			.setValue(this.plugin.settings.aiApiKeySecret)
+			.onChange(async (value) => {
+				this.plugin.settings.aiApiKeySecret = value;
+				await this.plugin.saveSettings();
+			}));
+	}
+
+	private addCreatePromptButton(setting: Setting): void {
+		setting.addButton((button) => button.setButtonText("Create prompt").onClick(() => void this.createDefaultPromptFile()));
+	}
+
+	private async createDefaultPromptFile(): Promise<void> {
+		try {
+			const file = await createDefaultPrompt(this.app, this.plugin.settings.promptFolder);
+			new Notice(file ? `Created ${file.path}` : "The default prompt already exists.");
+		} catch (error) {
+			new Notice(`Unable to create the default prompt: ${message(error)}`);
+		}
+	}
+
 	private async createDefaultTemplateFile(): Promise<void> {
 		try {
 			const file = await createDefaultTemplate(this.app, this.plugin.settings.templateFolder);
@@ -226,6 +302,32 @@ export async function createDefaultTemplate(app: App, folder: string): Promise<T
 	return app.vault.create(path, `${DEFAULT_TEMPLATE}\n`);
 }
 
+export const DEFAULT_AI_PROMPT = `Act as a fast Japanese-to-English study assistant. For every input, respond ONLY in this exact format:
+
+{words_with_furigana} - {english_translation}, {easy_japanese_definition}
+
+Rules:
+- Answer in English.
+- Be concise: maximum 30 words for vocabulary, 60 words for grammar point.
+- words_with_furigana use this {kanji|furigana} syntax. Align kanji with furigana by repeating this syntax and splitting the words as many times necessary.
+- Do not invent information.
+- If ambiguous, mention the two possible meanings briefly.
+- No introduction or conclusion`;
+
+export async function createDefaultPrompt(app: App, folder: string): Promise<TFile | null> {
+	const folderPath = normalizePath(folder.trim()) || DEFAULT_SETTINGS.promptFolder;
+	const existing = app.vault.getAbstractFileByPath(folderPath);
+	if (!existing) await app.vault.createFolder(folderPath);
+	else if (!(existing instanceof TFolder)) throw new Error(`${folderPath} exists and is not a folder.`);
+	const path = `${folderPath}/Default.md`;
+	if (app.vault.getAbstractFileByPath(path)) return null;
+	return app.vault.create(path, `${DEFAULT_AI_PROMPT}\n`);
+}
+
+export function getPromptFiles(app: App, folder: string): TFile[] {
+	return getTemplateFiles(app, folder);
+}
+
 function collectMarkdownFiles(folder: TFolder): TFile[] {
 	return folder.children.flatMap((child) => {
 		if (child instanceof TFile) return child.extension === "md" ? [child] : [];
@@ -235,4 +337,15 @@ function collectMarkdownFiles(folder: TFolder): TFile[] {
 
 function message(error: unknown): string {
 	return error instanceof Error ? error.message : String(error);
+}
+
+function validateAiApiBaseUrl(value: string): string | undefined {
+	try {
+		const url = new URL(value.trim());
+		const isLocal = url.protocol === "http:" && (url.hostname === "localhost" || url.hostname === "127.0.0.1" || url.hostname === "[::1]");
+		if (url.username || url.password || url.search || url.hash) return "Do not include credentials, a query, or a fragment.";
+		return url.protocol === "https:" || isLocal ? undefined : "Use HTTPS, except for a local server.";
+	} catch {
+		return "Enter a valid API base URL.";
+	}
 }

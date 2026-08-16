@@ -2,6 +2,63 @@
 	margin-top: 1rem;
 }
 
+.kotoba-insert-modal .kotoba-lookup-tabs {
+	display: flex;
+	gap: 0.25rem;
+	margin: 0.5rem 0 1rem;
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.kotoba-insert-modal .kotoba-lookup-tab {
+	padding: 0.45rem 0.75rem;
+	border: 0;
+	border-bottom: 2px solid transparent;
+	border-radius: 0;
+	background: transparent;
+	color: var(--text-muted);
+	box-shadow: none;
+}
+
+.kotoba-insert-modal .kotoba-lookup-tab:hover {
+	background: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+.kotoba-insert-modal .kotoba-lookup-tab.is-active {
+	border-bottom-color: var(--interactive-accent);
+	color: var(--text-normal);
+}
+
+.kotoba-insert-modal .kotoba-ai-prompt {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	margin-top: 0.75rem;
+}
+
+.kotoba-insert-modal .kotoba-ai-prompt select {
+	min-width: 0;
+	flex: 1;
+}
+
+.kotoba-insert-modal .kotoba-ai-prompt .kotoba-muted {
+	margin: 0;
+}
+
+.kotoba-insert-modal .kotoba-ai-fallback {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+	margin-top: 0.75rem;
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
+.kotoba-insert-modal .kotoba-ai-fallback button {
+	flex-shrink: 0;
+}
+
 .kotoba-insert-modal .kotoba-sense {
 	border: 1px solid var(--background-modifier-border);
 	border-radius: var(--radius-s);

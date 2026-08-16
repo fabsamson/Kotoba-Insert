@@ -7,6 +7,7 @@ Kotoba Insert is an English-language Obsidian plugin for quickly inserting Japan
 - Search a local Japanese dictionary and insert selected meanings with a Markdown template.
 - Insert verified per-kanji or word-group furigana when the dictionary provides an alignment.
 - Read Kotoba Insert furigana directly in Reading view and Live Preview. In the editor, furigana renders above the kanji until you place the cursor on that token, when the editable `{word|reading}` source is shown.
+- Use a prompt you control with an OpenAI-compatible AI provider, preview the generated Markdown, and insert it at the cursor.
 
 ## V1 workflow
 
@@ -24,6 +25,12 @@ The default template is:
 
 Kotoba Insert renders `{word|reading}` itself, so no separate Furigana plugin is required. When the installed dictionary contains an exact JmdictFurigana match for the selected written form and reading, `{{word_with_furigana}}` uses aligned segments instead: `{食|た}べる`. It otherwise safely falls back to `{食べる|たべる}`.
 
+## AI lookup
+
+Configure the AI API base URL, model, API-key secret, and prompt folder in **Settings → Kotoba Insert → AI lookup**. The default base URL is OpenAI's `https://api.openai.com/v1` and the default model is `gpt-5.6-luna`, but any provider compatible with the Chat Completions API can be configured.
+
+API keys are selected by name through Obsidian's SecretStorage and are not saved in Kotoba Insert's plugin data. Create the default prompt in the configured `kotoba-insert-prompt` folder, or add your own Markdown prompt files. Choose a prompt for each AI lookup. The existing dictionary command opens the Dictionary tab; **Kotoba Insert: Ask AI and insert Japanese study note** opens the AI tab directly.
+
 ## Template fields
 
 `word`, `reading`, `word_with_furigana`, `english_definitions`, `english_definition_1`, `part_of_speech`, `alternate_forms`, `priority`, `commonness`, `cross_references`, `antonyms`, `field_tags`, `usage_tags`, and `sense_notes`.
@@ -32,7 +39,7 @@ Multi-sense values are semicolon-separated. An absent optional field becomes an 
 
 ## Privacy and data source
 
-Lookups are local after installation. The plugin sends neither note content nor search terms to a server. See [PRIVACY.md](PRIVACY.md) and [NOTICE.md](NOTICE.md).
+Dictionary lookups are local after installation. AI lookups send the entered term and selected prompt to the AI provider configured by the user; they can incur charges. The plugin does not send note content. See [PRIVACY.md](PRIVACY.md) and [NOTICE.md](NOTICE.md).
 
 ## Support
 

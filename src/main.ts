@@ -1,5 +1,6 @@
 import { Plugin, type Editor } from "obsidian";
 
+import { AiService } from "./ai/service";
 import { DictionaryService } from "./dictionary/service";
 import { renderFuriganaInElement } from "./furigana";
 import { furiganaLivePreview } from "./live-preview";
@@ -9,6 +10,7 @@ import { LookupModal } from "./ui/lookup-modal";
 export default class KotobaInsertPlugin extends Plugin {
 	public settings: KotobaSettings = DEFAULT_SETTINGS;
 	public dictionary!: DictionaryService;
+	public ai!: AiService;
 
 	public async onload(): Promise<void> {
 		await this.loadSettings();
@@ -17,6 +19,11 @@ export default class KotobaInsertPlugin extends Plugin {
 			this.settings.installedDictionaryBuiltAt = metadata.builtAt;
 			await this.saveSettings();
 		});
+		this.ai = new AiService(this.app, () => ({
+			apiBaseUrl: this.settings.aiApiBaseUrl,
+			model: this.settings.aiModel,
+			apiKeySecret: this.settings.aiApiKeySecret,
+		}));
 
 		this.addSettingTab(new KotobaSettingTab(this));
 		this.registerEditorExtension(furiganaLivePreview);
@@ -26,6 +33,12 @@ export default class KotobaInsertPlugin extends Plugin {
 			icon: "languages",
 			editorCallback: (editor: Editor) => this.openLookup(editor),
 		});
+		this.addCommand({
+			id: "ask-ai-and-insert",
+			name: "Ask AI and insert Japanese study note",
+			icon: "sparkles",
+			editorCallback: (editor: Editor) => this.openLookup(editor, "ai"),
+		});
 		this.registerMarkdownPostProcessor((element) => renderFuriganaInElement(element));
 	}
 
@@ -33,8 +46,8 @@ export default class KotobaInsertPlugin extends Plugin {
 		await this.saveData(this.settings);
 	}
 
-	private openLookup(editor: Editor): void {
-		new LookupModal(this.app, editor, this.dictionary, () => this.settings.templateFolder).open();
+	private openLookup(editor: Editor, initialTab: "dictionary" | "ai" = "dictionary"): void {
+		new LookupModal(this.app, editor, this.dictionary, this.ai, () => this.settings.templateFolder, () => this.settings.promptFolder, initialTab).open();
 	}
 
 	private async loadSettings(): Promise<void> {
@@ -47,6 +60,10 @@ function normalizeSettings(value: unknown): KotobaSettings {
 	if (!isRecord(value)) return { ...DEFAULT_SETTINGS };
 	return {
 		templateFolder: nonEmptyString(value.templateFolder, DEFAULT_SETTINGS.templateFolder),
+		promptFolder: nonEmptyString(value.promptFolder, DEFAULT_SETTINGS.promptFolder),
+		aiApiBaseUrl: nonEmptyString(value.aiApiBaseUrl, DEFAULT_SETTINGS.aiApiBaseUrl),
+		aiModel: nonEmptyString(value.aiModel, DEFAULT_SETTINGS.aiModel),
+		aiApiKeySecret: stringOrEmpty(value.aiApiKeySecret),
 		dictionaryMetadataUrl: nonEmptyString(value.dictionaryMetadataUrl, DEFAULT_SETTINGS.dictionaryMetadataUrl),
 		installedDictionaryVersion: stringOrNull(value.installedDictionaryVersion),
 		installedDictionaryBuiltAt: stringOrNull(value.installedDictionaryBuiltAt),
@@ -63,4 +80,8 @@ function nonEmptyString(value: unknown, fallback: string): string {
 
 function stringOrNull(value: unknown): string | null {
 	return typeof value === "string" ? value : null;
+}
+
+function stringOrEmpty(value: unknown): string {
+	return typeof value === "string" ? value : "";
 }
