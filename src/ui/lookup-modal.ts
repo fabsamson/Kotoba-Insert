@@ -419,9 +419,10 @@ export class LookupModal extends Modal {
 			if (version !== this.aiRequestVersion) return;
 			this.aiError = message(error);
 		} finally {
-			if (version !== this.aiRequestVersion) return;
-			this.aiLoading = false;
-			this.render({ focusSearch: false });
+			if (version === this.aiRequestVersion) {
+				this.aiLoading = false;
+				this.render({ focusSearch: false });
+			}
 		}
 	}
 

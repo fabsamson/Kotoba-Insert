@@ -24,7 +24,7 @@ export class AiService {
 		if (!configuration.model.trim()) throw new Error("Choose an AI model in Kotoba Insert settings.");
 		if (!configuration.apiKeySecret.trim()) throw new Error("Choose an API key secret in Kotoba Insert settings.");
 		const apiKey = this.app.secretStorage.getSecret(configuration.apiKeySecret);
-		if (!apiKey) throw new Error(`The API key secret \"${configuration.apiKeySecret}\" is unavailable.`);
+		if (!apiKey) throw new Error(`The API key secret "${configuration.apiKeySecret}" is unavailable.`);
 
 		const endpoint = completionEndpoint(configuration.apiBaseUrl);
 		let response: RequestUrlResponse;
