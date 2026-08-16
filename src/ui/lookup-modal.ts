@@ -1,14 +1,19 @@
 import { Component, MarkdownRenderer, Modal, Notice, TFile, type App, type Editor } from "obsidian";
 
+import type { AiService } from "../ai/service";
 import type { DictionaryService } from "../dictionary/service";
 import type { SearchResult } from "../dictionary/types";
+import { replaceSelectionAndPlaceCursor } from "../editor-insertion";
 import { renderFuriganaInElement } from "../furigana";
-import { getTemplateFiles } from "../settings";
+import { getPromptFiles, getTemplateFiles } from "../settings";
 import { renderTemplate } from "../template";
 import { paginate, RESULTS_PER_PAGE } from "./pagination";
 
+type LookupTab = "dictionary" | "ai";
+
 export class LookupModal extends Modal {
 	private query = "";
+	private activeTab: LookupTab;
 	private results: SearchResult[] = [];
 	private resultsPage = 0;
 	private selectedResult: SearchResult | null = null;
@@ -19,53 +24,171 @@ export class LookupModal extends Modal {
 	private previewComponent: Component | null = null;
 	private previewVersion = 0;
 	private insertButton: HTMLButtonElement | null = null;
+	private prompts: TFile[] = [];
+	private selectedPromptPath: string | null = null;
+	private aiResult: string | null = null;
+	private aiError: string | null = null;
+	private aiLoading = false;
+	private aiPreviewEl: HTMLElement | null = null;
+	private aiPreviewComponent: Component | null = null;
+	private aiPreviewVersion = 0;
+	private aiInsertButton: HTMLButtonElement | null = null;
+	private aiRequestVersion = 0;
 
 	public constructor(
 		app: App,
 		private readonly editor: Editor,
 		private readonly dictionary: DictionaryService,
+		private readonly ai: AiService,
 		private readonly templateFolder: () => string,
+		private readonly promptFolder: () => string,
+		initialTab: LookupTab = "dictionary",
+		initialQuery = "",
 	) {
 		super(app);
+		this.activeTab = initialTab;
+		this.query = initialQuery;
 	}
 
 	public async onOpen(): Promise<void> {
 		this.modalEl.addClass("kotoba-insert-modal");
 		this.templates = getTemplateFiles(this.app, this.templateFolder());
 		this.selectedTemplatePath = this.templates[0]?.path ?? null;
+		this.prompts = getPromptFiles(this.app, this.promptFolder());
+		this.selectedPromptPath = this.prompts[0]?.path ?? null;
 		this.render();
 	}
 
 	public onClose(): void {
+		this.aiRequestVersion += 1;
 		this.clearPreview();
+		this.clearAiPreview();
 		this.contentEl.empty();
 	}
 
 	private render(options: { focusSearch?: boolean; scrollToSelection?: boolean } = {}): void {
 		this.clearPreview();
+		this.clearAiPreview();
 		const { contentEl } = this;
 		contentEl.empty();
 		contentEl.createEl("h2", { text: "Kotoba Insert" });
-		contentEl.createEl("p", { text: "Search any part of a Japanese word or reading." });
-
-		const searchRow = contentEl.createDiv({ cls: "kotoba-search-row" });
-		const input = searchRow.createEl("input", { type: "text", placeholder: "e.g. 食べる" });
-		input.value = this.query;
-		input.addEventListener("input", () => { this.query = input.value; });
-		input.addEventListener("keydown", (event) => {
-			if (event.key === "Enter") void this.search();
-		});
-		const button = searchRow.createEl("button", { text: "Search", cls: "mod-cta" });
-		button.addEventListener("click", () => void this.search());
-
-		const resultsEl = contentEl.createDiv({ cls: "kotoba-results" });
-		if (this.results.length === 0 && this.query.trim()) resultsEl.createEl("p", { text: "No matches found.", cls: "kotoba-muted" });
-		if (this.results.length > 0) this.renderResultsTable(resultsEl);
-		if (this.selectedResult) this.renderSelection(contentEl);
+		this.renderTabs(contentEl);
+		const modeEl = contentEl.createDiv({ cls: "kotoba-lookup-mode" });
+		modeEl.setAttr("role", "tabpanel");
+		modeEl.setAttr("aria-labelledby", `kotoba-tab-${this.activeTab}`);
+		const input = this.activeTab === "dictionary"
+			? this.renderDictionaryMode(modeEl)
+			: this.renderAiMode(modeEl);
 		if (options.focusSearch ?? true) window.setTimeout(() => input.focus(), 0);
 		if (options.scrollToSelection) {
 			window.setTimeout(() => contentEl.querySelector<HTMLElement>("[data-kotoba-selection]")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
 		}
+	}
+
+	private renderTabs(container: HTMLElement): void {
+		const tabs = container.createDiv({ cls: "kotoba-lookup-tabs" });
+		tabs.setAttr("role", "tablist");
+		tabs.setAttr("aria-label", "Lookup mode");
+		for (const tab of ["dictionary", "ai"] as const) {
+			const label = tab === "dictionary" ? "Dictionary" : "AI";
+			const button = tabs.createEl("button", { text: label, cls: "kotoba-lookup-tab" });
+			button.setAttr("id", `kotoba-tab-${tab}`);
+			button.setAttr("role", "tab");
+			button.setAttr("aria-selected", String(tab === this.activeTab));
+			button.setAttr("aria-controls", `kotoba-panel-${tab}`);
+			if (tab === this.activeTab) button.addClass("is-active");
+			button.addEventListener("click", () => {
+				this.activeTab = tab;
+				this.render();
+			});
+		}
+	}
+
+	private renderDictionaryMode(container: HTMLElement): HTMLInputElement {
+		container.setAttr("id", "kotoba-panel-dictionary");
+		container.createEl("p", { text: "Search any part of a Japanese word or reading." });
+		const input = this.createSearchRow(container, "e.g. 食べる", "Search", () => void this.searchDictionary());
+		const resultsEl = container.createDiv({ cls: "kotoba-results" });
+		if (this.results.length === 0 && this.query.trim()) resultsEl.createEl("p", { text: "No matches found.", cls: "kotoba-muted" });
+		if (this.results.length > 0) this.renderResultsTable(resultsEl);
+		if (this.query.trim()) this.renderAiFallback(resultsEl);
+		if (this.selectedResult) this.renderSelection(container);
+		return input;
+	}
+
+	private renderAiMode(container: HTMLElement): HTMLInputElement {
+		container.setAttr("id", "kotoba-panel-ai");
+		container.createEl("p", { text: "Use your selected prompt to generate a Japanese study note." });
+		const input = this.createSearchRow(container, "e.g. 食べる", this.aiLoading ? "Asking AI…" : "Ask AI", () => void this.askAi(), this.aiLoading);
+		const promptSetting = container.createDiv({ cls: "kotoba-ai-prompt" });
+		promptSetting.createEl("label", { text: "Prompt", attr: { for: "kotoba-ai-prompt" } });
+		if (this.prompts.length === 0) {
+			promptSetting.createEl("p", { text: `No Markdown prompts found in ${this.promptFolder()}. Create Default.md from Kotoba Insert settings.`, cls: "kotoba-muted" });
+		} else {
+			const select = promptSetting.createEl("select", { attr: { id: "kotoba-ai-prompt" } });
+			select.setAttr("aria-label", "AI prompt");
+			for (const prompt of this.prompts) {
+				const option = select.createEl("option", { text: prompt.path, value: prompt.path });
+				option.selected = prompt.path === this.selectedPromptPath;
+			}
+			select.addEventListener("change", () => {
+				this.selectedPromptPath = select.value;
+				this.aiResult = null;
+				this.aiError = null;
+				this.render({ focusSearch: false });
+			});
+		}
+
+		if (this.aiLoading) {
+			container.createEl("p", { text: "Asking AI…", cls: "kotoba-muted kotoba-ai-message" });
+		} else if (this.aiError) {
+			container.createEl("p", { text: this.aiError, cls: "kotoba-muted kotoba-ai-message" });
+		} else if (this.aiResult) {
+			const preview = container.createDiv({ cls: "kotoba-insertion-preview kotoba-ai-preview" });
+			preview.createEl("h3", { text: "Preview" });
+			this.aiPreviewEl = preview.createDiv({ cls: "kotoba-insertion-preview-content" });
+			void this.updateAiPreview();
+
+			const actions = container.createDiv({ cls: "kotoba-actions" });
+			this.aiInsertButton = actions.createEl("button", { text: "Insert", cls: "mod-cta" });
+			this.aiInsertButton.addEventListener("click", () => this.insertAiResult());
+		}
+		this.renderAiDisclaimer(container);
+		return input;
+	}
+
+	private renderAiDisclaimer(container: HTMLElement): void {
+		const disclaimer = container.createEl("ul", { cls: "kotoba-ai-disclaimer" });
+		disclaimer.createEl("li", { text: "External AI calls may incur charges billed to you by your provider." });
+		disclaimer.createEl("li", { text: "AI answers can vary, are not reviewed by the developer, and may be inaccurate. The developer is not responsible for incorrect AI output." });
+		disclaimer.createEl("li", { text: "For information only: August 2026 tests with the standard prompt and OpenAI API GPT-5.6 Luna cost less than US$0.01 per request. Your costs may differ." });
+	}
+
+	private createSearchRow(container: HTMLElement, placeholder: string, buttonText: string, onSubmit: () => void, disabled = false): HTMLInputElement {
+		const searchRow = container.createDiv({ cls: "kotoba-search-row" });
+		const input = searchRow.createEl("input", { type: "text", placeholder });
+		input.value = this.query;
+		input.addEventListener("input", () => {
+			this.query = input.value;
+			if (this.activeTab === "ai") this.invalidateAiResult();
+		});
+		input.addEventListener("keydown", (event) => {
+			if (event.key === "Enter" && !disabled) onSubmit();
+		});
+		const button = searchRow.createEl("button", { text: buttonText, cls: "mod-cta" });
+		button.disabled = disabled;
+		button.addEventListener("click", onSubmit);
+		return input;
+	}
+
+	private renderAiFallback(container: HTMLElement): void {
+		const fallback = container.createDiv({ cls: "kotoba-ai-fallback" });
+		fallback.createSpan({ text: "Not the result you need?" });
+		const button = fallback.createEl("button", { text: `Ask AI about “${this.query.trim()}”` });
+		button.addEventListener("click", () => {
+			this.activeTab = "ai";
+			this.render({ focusSearch: false });
+		});
 	}
 
 	private renderResultsTable(container: HTMLElement): void {
@@ -160,7 +283,7 @@ export class LookupModal extends Modal {
 		const actions = selection.createDiv({ cls: "kotoba-actions" });
 		this.insertButton = actions.createEl("button", { text: "Insert", cls: "mod-cta" });
 		this.insertButton.disabled = this.selectedSenses.size === 0;
-		this.insertButton.addEventListener("click", () => void this.insert());
+		this.insertButton.addEventListener("click", () => void this.insertDictionaryResult());
 	}
 
 	private async updatePreview(): Promise<void> {
@@ -190,18 +313,38 @@ export class LookupModal extends Modal {
 			const template = await this.app.vault.read(file);
 			if (version !== this.previewVersion || preview !== this.previewEl) return;
 			const rendered = renderTemplate(template, { form: result.matchedForm, allForms: result.entry.forms, senses });
-			preview.empty();
-			const component = new Component();
-			component.load();
-			this.previewComponent = component;
-			await MarkdownRenderer.render(this.app, rendered, preview, "", component);
-			if (version !== this.previewVersion || preview !== this.previewEl) return;
-			renderFuriganaInElement(preview);
+			await this.renderMarkdownPreview(rendered, preview, (component) => { this.previewComponent = component; });
 		} catch (error) {
 			if (version !== this.previewVersion || preview !== this.previewEl) return;
 			preview.empty();
-			preview.createEl("p", { text: `Unable to render preview: ${error instanceof Error ? error.message : String(error)}`, cls: "kotoba-muted" });
+			preview.createEl("p", { text: `Unable to render preview: ${message(error)}`, cls: "kotoba-muted" });
 		}
+	}
+
+	private async updateAiPreview(): Promise<void> {
+		const preview = this.aiPreviewEl;
+		const result = this.aiResult;
+		const version = ++this.aiPreviewVersion;
+		this.aiPreviewComponent?.unload();
+		this.aiPreviewComponent = null;
+		if (!preview || !result) return;
+		try {
+			await this.renderMarkdownPreview(result, preview, (component) => { this.aiPreviewComponent = component; });
+			if (version !== this.aiPreviewVersion || preview !== this.aiPreviewEl) return;
+		} catch (error) {
+			if (version !== this.aiPreviewVersion || preview !== this.aiPreviewEl) return;
+			preview.empty();
+			preview.createEl("p", { text: `Unable to render preview: ${message(error)}`, cls: "kotoba-muted" });
+		}
+	}
+
+	private async renderMarkdownPreview(markdown: string, preview: HTMLElement, setComponent: (component: Component) => void): Promise<void> {
+		preview.empty();
+		const component = new Component();
+		component.load();
+		setComponent(component);
+		await MarkdownRenderer.render(this.app, markdown, preview, "", component);
+		renderFuriganaInElement(preview);
 	}
 
 	private selectedSensesFor(result: SearchResult): SearchResult["entry"]["senses"] {
@@ -219,7 +362,27 @@ export class LookupModal extends Modal {
 		this.insertButton = null;
 	}
 
-	private async search(): Promise<void> {
+	private clearAiPreview(): void {
+		this.aiPreviewVersion += 1;
+		this.aiPreviewComponent?.unload();
+		this.aiPreviewComponent = null;
+		this.aiPreviewEl = null;
+		this.aiInsertButton = null;
+	}
+
+	private invalidateAiResult(): void {
+		this.aiResult = null;
+		this.aiError = null;
+		this.aiPreviewVersion += 1;
+		this.aiPreviewComponent?.unload();
+		this.aiPreviewComponent = null;
+		this.aiPreviewEl?.closest(".kotoba-ai-preview")?.remove();
+		this.aiInsertButton?.closest(".kotoba-actions")?.remove();
+		this.aiPreviewEl = null;
+		this.aiInsertButton = null;
+	}
+
+	private async searchDictionary(): Promise<void> {
 		try {
 			this.results = await this.dictionary.search(this.query);
 			this.resultsPage = 0;
@@ -227,11 +390,46 @@ export class LookupModal extends Modal {
 			this.selectedSenses.clear();
 			this.render();
 		} catch (error) {
-			new Notice(error instanceof Error ? error.message : String(error));
+			new Notice(message(error));
 		}
 	}
 
-	private async insert(): Promise<void> {
+	private async askAi(): Promise<void> {
+		const path = this.selectedPromptPath;
+		if (!path) {
+			this.aiError = `No Markdown prompts found in ${this.promptFolder()}. Create Default.md from Kotoba Insert settings.`;
+			this.render({ focusSearch: false });
+			return;
+		}
+		const file = this.app.vault.getAbstractFileByPath(path);
+		if (!(file instanceof TFile)) {
+			this.aiError = "The selected prompt is no longer available.";
+			this.render({ focusSearch: false });
+			return;
+		}
+
+		const version = ++this.aiRequestVersion;
+		this.aiLoading = true;
+		this.aiResult = null;
+		this.aiError = null;
+		this.render({ focusSearch: false });
+		try {
+			const prompt = await this.app.vault.read(file);
+			const result = await this.ai.lookup(this.query, prompt);
+			if (version !== this.aiRequestVersion) return;
+			this.aiResult = result;
+		} catch (error) {
+			if (version !== this.aiRequestVersion) return;
+			this.aiError = message(error);
+		} finally {
+			if (version === this.aiRequestVersion) {
+				this.aiLoading = false;
+				this.render({ focusSearch: false });
+			}
+		}
+	}
+
+	private async insertDictionaryResult(): Promise<void> {
 		const result = this.selectedResult;
 		const path = this.selectedTemplatePath;
 		if (!result || !path || this.selectedSenses.size === 0) return;
@@ -243,7 +441,17 @@ export class LookupModal extends Modal {
 		const template = await this.app.vault.read(file);
 		const senses = this.selectedSensesFor(result);
 		const rendered = renderTemplate(template, { form: result.matchedForm, allForms: result.entry.forms, senses });
-		this.editor.replaceRange(rendered, this.editor.getCursor());
+		replaceSelectionAndPlaceCursor(this.editor, rendered);
 		this.close();
 	}
+
+	private insertAiResult(): void {
+		if (!this.aiResult) return;
+		replaceSelectionAndPlaceCursor(this.editor, this.aiResult);
+		this.close();
+	}
+}
+
+function message(error: unknown): string {
+	return error instanceof Error ? error.message : String(error);
 }
