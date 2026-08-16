@@ -45,6 +45,21 @@
 	margin: 0;
 }
 
+.kotoba-insert-modal .kotoba-ai-message {
+	margin: 1rem 0 0;
+}
+
+.kotoba-insert-modal .kotoba-ai-disclaimer {
+	margin: 1rem 0 0;
+	padding-left: 1.25rem;
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
+.kotoba-insert-modal .kotoba-ai-disclaimer li + li {
+	margin-top: 0.35rem;
+}
+
 .kotoba-insert-modal .kotoba-ai-fallback {
 	display: flex;
 	align-items: center;

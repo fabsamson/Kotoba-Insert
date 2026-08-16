@@ -136,24 +136,29 @@ export class LookupModal extends Modal {
 			});
 		}
 
-		const preview = container.createDiv({ cls: "kotoba-insertion-preview kotoba-ai-preview" });
-		preview.createEl("h3", { text: "Preview" });
-		this.aiPreviewEl = preview.createDiv({ cls: "kotoba-insertion-preview-content" });
 		if (this.aiLoading) {
-			this.aiPreviewEl.createEl("p", { text: "Asking AI…", cls: "kotoba-muted" });
+			container.createEl("p", { text: "Asking AI…", cls: "kotoba-muted kotoba-ai-message" });
 		} else if (this.aiError) {
-			this.aiPreviewEl.createEl("p", { text: this.aiError, cls: "kotoba-muted" });
+			container.createEl("p", { text: this.aiError, cls: "kotoba-muted kotoba-ai-message" });
 		} else if (this.aiResult) {
+			const preview = container.createDiv({ cls: "kotoba-insertion-preview kotoba-ai-preview" });
+			preview.createEl("h3", { text: "Preview" });
+			this.aiPreviewEl = preview.createDiv({ cls: "kotoba-insertion-preview-content" });
 			void this.updateAiPreview();
-		} else {
-			this.aiPreviewEl.createEl("p", { text: "Choose a prompt and ask AI to preview the result.", cls: "kotoba-muted" });
-		}
 
-		const actions = container.createDiv({ cls: "kotoba-actions" });
-		this.aiInsertButton = actions.createEl("button", { text: "Insert at cursor", cls: "mod-cta" });
-		this.aiInsertButton.disabled = !this.aiResult || this.aiLoading;
-		this.aiInsertButton.addEventListener("click", () => this.insertAiResult());
+			const actions = container.createDiv({ cls: "kotoba-actions" });
+			this.aiInsertButton = actions.createEl("button", { text: "Insert at cursor", cls: "mod-cta" });
+			this.aiInsertButton.addEventListener("click", () => this.insertAiResult());
+		}
+		this.renderAiDisclaimer(container);
 		return input;
+	}
+
+	private renderAiDisclaimer(container: HTMLElement): void {
+		const disclaimer = container.createEl("ul", { cls: "kotoba-ai-disclaimer" });
+		disclaimer.createEl("li", { text: "External AI calls may incur charges billed to you by your provider." });
+		disclaimer.createEl("li", { text: "AI answers can vary, are not reviewed by the developer, and may be inaccurate. The developer is not responsible for incorrect AI output." });
+		disclaimer.createEl("li", { text: "For information only: August 2026 tests with the standard prompt and OpenAI API GPT-5.6 Luna cost less than US$0.01 per request. Your costs may differ." });
 	}
 
 	private createSearchRow(container: HTMLElement, placeholder: string, buttonText: string, onSubmit: () => void, disabled = false): HTMLInputElement {
@@ -365,13 +370,13 @@ export class LookupModal extends Modal {
 	private invalidateAiResult(): void {
 		this.aiResult = null;
 		this.aiError = null;
-		if (this.aiInsertButton) this.aiInsertButton.disabled = true;
 		this.aiPreviewVersion += 1;
 		this.aiPreviewComponent?.unload();
 		this.aiPreviewComponent = null;
-		if (!this.aiPreviewEl) return;
-		this.aiPreviewEl.empty();
-		this.aiPreviewEl.createEl("p", { text: "Choose a prompt and ask AI to preview the result.", cls: "kotoba-muted" });
+		this.aiPreviewEl?.closest(".kotoba-ai-preview")?.remove();
+		this.aiInsertButton?.closest(".kotoba-actions")?.remove();
+		this.aiPreviewEl = null;
+		this.aiInsertButton = null;
 	}
 
 	private async searchDictionary(): Promise<void> {
