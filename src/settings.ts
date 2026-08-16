@@ -302,18 +302,22 @@ export async function createDefaultTemplate(app: App, folder: string): Promise<T
 	return app.vault.create(path, `${DEFAULT_TEMPLATE}\n`);
 }
 
-export const DEFAULT_AI_PROMPT = `Act as a fast Japanese-to-English study assistant. For every input, respond ONLY in this exact format:
+export const DEFAULT_AI_PROMPT = `Act as a fast Japanese study assistant.
 
-{words_with_furigana} - {english_translation}, {easy_japanese_definition}
+For every input, output exactly one line:
+
+Japanese with furigana - English translation, simple Japanese definition
 
 Rules:
-- All parts in {} are necessary and must be filled
-- Answer in English.
-- Be concise: maximum 30 words for vocabulary, 60 words for grammar point.
-- {words_with_furigana} use this {kanji|furigana} syntax. You need to align kanji with furigana by repeating this syntax and splitting the words as many times necessary e.g. {生|き}き{物|もの}
-- Do not invent information.
-- If ambiguous, mention the two possible meanings briefly.
-- No introduction or conclusion`;
+- Use literal furigana syntax: {漢字|ふりがな}
+- Always include the simple Japanese definition after the comma.
+- Never leave the definition empty.
+- Do not include labels, explanations, or extra lines.
+- Do not output placeholder symbols such as [ ] or < >.
+- Maximum 30 words.
+
+Example:
+{生|い}き{物|もの} - living thing, 生きているもの`;
 
 export async function createDefaultPrompt(app: App, folder: string): Promise<TFile | null> {
 	const folderPath = normalizePath(folder.trim()) || DEFAULT_SETTINGS.promptFolder;
